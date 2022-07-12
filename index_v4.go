@@ -119,6 +119,16 @@ func dropAllIndexesAndConstraintsV4(ctx context.Context, gogm *Gogm, db string) 
 		return fmt.Errorf("failed to convert constraints to string array, %w", err)
 	}
 
+	res, _, err = sess.QueryRaw(ctx, "CALL db.indexes()", nil)
+	if err != nil {
+		return fmt.Errorf("failed to call db.indexes(), %w", err)
+	}
+
+	indexes, err := resultToStringArrV4(false, res)
+	if err != nil {
+		return fmt.Errorf("failed to convert result to string array, %w", err)
+	}
+
 	err = sess.ManagedTransaction(ctx, func(tx TransactionV2) error {
 		//if there is anything, get rid of it
 		if len(constraints) != 0 {
@@ -131,16 +141,6 @@ func dropAllIndexesAndConstraintsV4(ctx context.Context, gogm *Gogm, db string) 
 			}
 		}
 
-		res, _, err = tx.QueryRaw(ctx, "CALL db.indexes()", nil)
-		if err != nil {
-			return fmt.Errorf("failed to call db.indexes(), %w", err)
-		}
-
-		indexes, err := resultToStringArrV4(false, res)
-		if err != nil {
-			return fmt.Errorf("failed to convert result to string array, %w", err)
-		}
-
 		//if there is anything, get rid of it
 		if len(indexes) != 0 {
 			for _, index := range indexes {
@@ -148,6 +148,7 @@ func dropAllIndexesAndConstraintsV4(ctx context.Context, gogm *Gogm, db string) 
 					return errors.New("invalid index config")
 				}
 
+				gogm.logger.Debugf("dropping index '%s'", index)
 				_, _, err := tx.QueryRaw(ctx, fmt.Sprintf("DROP INDEX %s IF EXISTS", index), nil)
 				if err != nil {
 					return fmt.Errorf("failed to drop index %s, %w", index, err)
