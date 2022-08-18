@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
 
 	dsl "github.com/mindstand/go-cypherdsl"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -510,6 +511,7 @@ func generateCurRels(gogm *Gogm, parentPtr uintptr, current *reflect.Value, curr
 
 // createNodes updates existing nodes and creates new nodes while also making a lookup table for ptr -> neoid
 func createNodes(transaction neo4j.Transaction, crNodes map[string]map[uintptr]*nodeCreate, nodeRef map[uintptr]*reflect.Value, nodeIdRef map[uintptr]int64) error {
+	now := time.Now().Unix()
 	for label, nodes := range crNodes {
 		// used when the id of the node hasn't been set yet
 		var i uint64 = 0
@@ -522,9 +524,14 @@ func createNodes(transaction neo4j.Transaction, crNodes map[string]map[uintptr]*
 			}
 
 			if id, ok := nodeIdRef[ptr]; ok {
+				// The creation time should not be updated
+				delete(config.Params, "created_at")
+				config.Params["updated_at"] = now
 				row["id"] = id
 				updateRows = append(updateRows, row)
 			} else {
+				config.Params["created_at"] = now
+				config.Params["updated_at"] = now
 				row["i"] = fmt.Sprintf("%d", i)
 				newRows = append(newRows, row)
 			}
@@ -601,6 +608,8 @@ func createNodes(transaction neo4j.Transaction, crNodes map[string]map[uintptr]*
 				}
 
 				reflect.Indirect(*val).FieldByName(DefaultPrimaryKeyStrategy.FieldName).Set(reflect.ValueOf(&graphId))
+				reflect.Indirect(*val).FieldByName("CreatedAt").Set(reflect.ValueOf(now))
+				reflect.Indirect(*val).FieldByName("UpdatedAt").Set(reflect.ValueOf(now))
 			}
 		}
 

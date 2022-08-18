@@ -26,6 +26,12 @@ type BaseNode struct {
 	// Id is the GraphId that neo4j uses internally
 	Id *int64 `json:"-" gogm:"pk=default"`
 
+	// CreateTime is the unix time the node was created
+	CreatedAt int64 `json:"-" gogm:"name=created_at"`
+
+	// UpdateTime is the unix time the node was last updated
+	UpdatedAt int64 `json:"-" gogm:"name=updated_at"`
+
 	// LoadMap represents the state of how a node was loaded for neo4j.
 	// This is used to determine if relationships are removed on save
 	// field -- relations
