@@ -20,3 +20,5 @@ exclude (
 	github.com/adam-hanna/arrayOperations v1.0.0
 	github.com/adam-hanna/arrayOperations v1.0.1
 )
+
+replace github.com/mindstand/go-cypherdsl => github.com/waterdrink/go-cypherdsl v0.2.100
